@@ -19,7 +19,7 @@
     "swagger-ui-express": "^5.0.1",
     "whatsapp-web.js": "^1.27.0",
     "ws": "^8.18.1",
-    "wwebjs-mongo": "^1.0.0"   // Add this line
+    "wwebjs-mongo": "^1.0.0"
   },
   "devDependencies": {
     "eslint": "^8.38.0",
