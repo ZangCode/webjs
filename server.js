@@ -2,7 +2,7 @@ const app = require('./src/app');
 const { baseWebhookURL, enableWebHook, enableWebSocket } = require('./src/config');
 const { logger } = require('./src/logger');
 const { handleUpgrade } = require('./src/websocket');
-const { MongoDBSessionStore } = require('wwebjs-mongo'); // Import wwebjs-mongo
+const { MongoStore } = require('wwebjs-mongo'); // Correctly import MongoStore
 const mongoose = require('mongoose');
 const { Client, RemoteAuth } = require('whatsapp-web.js'); // Import WhatsApp Web client and RemoteAuth
 
@@ -21,16 +21,16 @@ mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
     process.exit(1); // Exit if MongoDB connection fails
   });
 
-// Set up the session store using wwebjs-mongo (MongoDB store)
-const store = new MongoDBSessionStore(mongoose.connection);
+// Create MongoStore instance for session management
+const store = new MongoStore({ mongoose: mongoose }); // Use MongoStore to manage sessions
 
-// Initialize WhatsApp Web client with RemoteAuth strategy and MongoDB session store
+// Set up WhatsApp Web client with RemoteAuth strategy and MongoDB session store
 const client = new Client({
   authStrategy: new RemoteAuth({
     store: store, // Use MongoDB store for session management
     backupSyncIntervalMs: 300000 // Sync session data every 5 minutes (300000 ms)
   }),
-  puppeteer: { headless: true }, // You can adjust the puppeteer settings if needed
+  puppeteer: { headless: true }, // Set to true for headless mode
 });
 
 // Handle client ready event
@@ -38,29 +38,11 @@ client.on('ready', () => {
   logger.info('WhatsApp Web client is ready!');
 });
 
-// Start the WhatsApp Web client
+// Initialize the client
 client.initialize();
 
-// Start the server
-const port = process.env.PORT || 3000;
-
-// Check if BASE_WEBHOOK_URL environment variable is available when WebHook is enabled
-if (!baseWebhookURL && enableWebHook) {
-  logger.error('BASE_WEBHOOK_URL environment variable is not set. Exiting...');
-  process.exit(1); // Terminate the application with an error code
-}
-
-const server = app.listen(port, () => {
-  logger.info(`Server running on port ${port}`);
-});
-
-// WebSocket upgrade handling if enabled
-if (enableWebSocket) {
-  server.on('upgrade', (request, socket, head) => {
-    handleUpgrade(request, socket, head);
-  });
-}
-
-// puppeteer uses subscriptions to SIGINT, SIGTERM, and SIGHUP to know when to close browser instances
-// this disables the warnings when you start more than 10 browser instances
-process.setMaxListeners(0);
+// Optionally, you can start your server here if needed
+// const port = process.env.PORT || 3000;
+// const server = app.listen(port, () => {
+//   logger.info(`Server running on port ${port}`);
+// });
