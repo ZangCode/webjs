@@ -4,7 +4,7 @@ const { logger } = require('./src/logger');
 const { handleUpgrade } = require('./src/websocket');
 const { MongoDBSessionStore } = require('wwebjs-mongo'); // Import wwebjs-mongo
 const mongoose = require('mongoose');
-const { Client, LocalAuth } = require('whatsapp-web.js'); // Import WhatsApp Web client
+const { Client, RemoteAuth } = require('whatsapp-web.js'); // Import WhatsApp Web client and RemoteAuth
 
 require('dotenv').config();
 
@@ -21,14 +21,16 @@ mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
     process.exit(1); // Exit if MongoDB connection fails
   });
 
-// Set up the session store using wwebjs-mongo
+// Set up the session store using wwebjs-mongo (MongoDB store)
 const store = new MongoDBSessionStore(mongoose.connection);
 
-// Initialize WhatsApp Web client with session store
+// Initialize WhatsApp Web client with RemoteAuth strategy and MongoDB session store
 const client = new Client({
-  authStrategy: new LocalAuth(),
+  authStrategy: new RemoteAuth({
+    store: store, // Use MongoDB store for session management
+    backupSyncIntervalMs: 300000 // Sync session data every 5 minutes (300000 ms)
+  }),
   puppeteer: { headless: true }, // You can adjust the puppeteer settings if needed
-  session: store,  // Use the MongoDB session store
 });
 
 // Handle client ready event
